@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use App\Models\User;
 use App\Models\Comment;
-
+use Illuminate\Support\Facades\File;
 use App\Models\Like;
 use App\UploadImageTrait;
 use Illuminate\Http\Request;
@@ -25,10 +25,17 @@ class PostController extends Controller
     }
     public function update_post(Request $request,$id){
         $request->validate(['body'=>'required',]);
-        $path=null;
-        if($request->path !=null){
-        $path=$this->uploadImage($request->path,"posts");}
-        Post::where('id',$id)->update(['body'=>$request->body,'path'=>$path,'user_id'=>auth()->user()->id]);
+        $post=Post::find($id);
+        $post->body=$request->body;
+       if($request->hasFile('image')){
+        $destenation='public/imgs/posts/'.$post->path;
+        if (file_exists($destenation)){
+       File::delete($destenation);
+       }
+       $path=$this->uploadImage($request,'posts');
+       $post->path= $path;
+       }
+       $post->save();
         return response()->json('Updated Done');
     }
     public function delete_post($id){

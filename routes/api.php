@@ -21,6 +21,8 @@ Route::group([
     Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:api')->name('logout');
     Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('auth:api')->name('refresh');
     Route::post('/me', [AuthController::class, 'me'])->middleware('auth:api')->name('me');
+
+
 });
 Route::post('/createpost',[PostController::class,'create_post']);
 Route::put('updatepost/{id}',[PostController::class,'update_post']);
@@ -53,12 +55,14 @@ Route::post('myposts',[UserController::class,'myPosts']);
 Route::get('/edituser/{id}',[UserController::class,'edit']);
 Route::delete('deleteaccount',[UserController::class,'deleteAccount']);
 Route::post('/suggestedUsers',[UserController::class,'suggestedUsers']);
+Route::put('/updateuser',[UserController::class,'update']);
+
 ////////////////////////////////////////////////////////////////////////////////////////
 Route::middleware([UserStatus::class])->group(function (){
 Route::post('allposts',[UserController::class,'allPosts']);
 Route::post('allusers',[UserController::class,'allUsers']);
 Route::delete('deleteuser/{id}',[UserController::class,'deleteUser']);
 Route::delete('deletePost/{id}',[UserController::class,'deletePost']);
-Route::post('makeadmin/{id}',[UserController::class,'makeAdmin']);
+Route::put('makeadmin/{id}',[UserController::class,'makeAdmin']);
 });
 

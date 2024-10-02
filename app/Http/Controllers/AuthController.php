@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\UploadImageTrait;
 use Validator;
 
 
 class AuthController extends Controller
 {
-
+ use UploadImageTrait;
     /**
      * Register a User.
      *
@@ -20,19 +21,22 @@ class AuthController extends Controller
             'name' => 'required',
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed|min:8',
+            'image_path' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         if($validator->fails()){
             return response()->json($validator->errors()->toJson(), 400);
         }
+       $path=$this->uploadImage( request(),'users');
 
         $user = new User;
         $user->name = request()->name;
         $user->email = request()->email;
         $user->password = bcrypt(request()->password);
+        $user->image_path = $path;
         $user->save();
 
-        return response()->json($user, 201);
+        return response()->json(request()->hasFile('image'), 201);
     }
 
 
@@ -99,4 +103,6 @@ class AuthController extends Controller
             'expires_in' => auth()->factory()->getTTL() * 60
         ]);
     }
+
+
 }

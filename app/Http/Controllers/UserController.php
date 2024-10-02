@@ -6,7 +6,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Post;
-
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules;
+use  Illuminate\Support\Facades\Auth;
 class UserController extends Controller
 {
     use UploadImageTrait;
@@ -36,18 +39,46 @@ class UserController extends Controller
         $user=User::where('id',$id)->first();
         return response()->json(['user_info'=>$user]);
     }
-    public function update(Request $request, $id){
-        $request->validate(['email'=>'required|email|unique:users','name'=>'required|unique:users','password'=>'required|min:8']);
-        $path=null;
-        if($request->path !=null){
-        $path=$this->uploadImage($request->path,"users");}
-        User::where('id',auth()->user()->id)->update([
-            'name'=>$request->name,
-            'email'=>$request->email,
-            'password'=>$request->password,
-            'image_path'=>$path,
-        ]);
-    }
+  public function editupdate(){
+    return view ('update');
+  }
+  public function update()
+  {
+      $validator = Validator::make(request()->all(), [
+          'name' => 'required|unique:users,name,' . Auth::id(),
+          'email' => 'required|email|unique:users,email,' . Auth::id(),
+          'password' => 'required|confirmed|min:8',
+          'image_path' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+      ]);
+
+      if ($validator->fails()) {
+          return response()->json($validator->errors()->toJson(), 400);
+      }
+
+      $user = User::find(Auth::id());
+      $user->name = request()->name;
+      $user->email = request()->email;
+      $user->password = bcrypt(request()->password);
+
+      if (request()->hasFile('image')){
+             $destenation='public/imgs/users/'.$user->image_path;
+             if (file_exists($destenation)){
+            File::delete($destenation);
+            }
+            $path=$this->uploadImage(request(),'users');
+            $user->image_path = $path;
+          }
+
+
+
+      $user->save();
+
+
+       return response()->json(['success' => 'User updated successfully']);
+
+  }
+
+
     public function deleteAccount(){
         User::destroy(auth()->user()->id);
     }
