@@ -39,14 +39,14 @@ class RegisteredUserController extends Controller
         ]);
 
 
-       $path= $this->uploadImage( $request,'users');
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'image_path'=>$path,
-        ]);
+        $user = new User;
+        $user->name = request()->name;
+        $user->email = request()->email;
+        $user->password = bcrypt(request()->password);
+        $user->user_name = 'taregv';
+        $path=$this->uploadImage( request(),'users',$user->user_name);
+        $user->image_path = $path;
+        $user->save();
 
         event(new Registered($user));
 

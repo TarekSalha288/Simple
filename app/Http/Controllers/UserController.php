@@ -61,11 +61,12 @@ class UserController extends Controller
       $user->password = bcrypt(request()->password);
 
       if (request()->hasFile('image')){
-             $destenation='public/imgs/users/'.$user->image_path;
+             $destenation='public/imgs/'.$user->image_path;
              if (file_exists($destenation)){
             File::delete($destenation);
             }
-            $path=$this->uploadImage(request(),'users');
+            $user=User::find(Auth::id());
+            $path=$this->uploadImage(request(),'users',$user->user_name);
             $user->image_path = $path;
           }
 
@@ -80,6 +81,11 @@ class UserController extends Controller
 
 
     public function deleteAccount(){
+        $user = User::find(Auth::id());
+        if(file_exists('public/imgs/users/'.$user->user_name)){
+            File::delete('public/imgs/users/'.$user->user_name);}
+        if(file_exists('public/imgs/posts/'.$user->user_name)){
+        File::delete('public/imgs/posts/'.$user->user_name);}
         User::destroy(auth()->user()->id);
     }
     public function suggestedUsers(){

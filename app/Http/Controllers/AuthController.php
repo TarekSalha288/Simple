@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\UploadImageTrait;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 
 
 class AuthController extends Controller
@@ -19,6 +19,7 @@ class AuthController extends Controller
     public function register() {
         $validator = Validator::make(request()->all(), [
             'name' => 'required',
+            'user_name'=>'unique:users,id',
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed|min:8',
             'image_path' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
@@ -27,16 +28,16 @@ class AuthController extends Controller
         if($validator->fails()){
             return response()->json($validator->errors()->toJson(), 400);
         }
-       $path=$this->uploadImage( request(),'users');
 
         $user = new User;
         $user->name = request()->name;
         $user->email = request()->email;
         $user->password = bcrypt(request()->password);
+        $user->user_name = request()->user_name;
+        $path=$this->uploadImage( request(),'users',$user->user_name);
         $user->image_path = $path;
         $user->save();
-
-        return response()->json(request()->hasFile('image'), 201);
+        return response()->json($user, 201);
     }
 
 

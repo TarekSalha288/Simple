@@ -18,6 +18,11 @@ class PostController extends Controller
       $request->validate([
         'body'=>'required',
       ]);
+      $path=null;
+      if($request->hasFile('image')){
+        $user=User::find(auth()->user()->id);
+       $path=$this->uploadImage($request,'posts',$user->user_name);
+      }
         Post::create(['body'=>$request->body,
         'user_id'=>auth()->user()->id,]);
 
@@ -28,17 +33,22 @@ class PostController extends Controller
         $post=Post::find($id);
         $post->body=$request->body;
        if($request->hasFile('image')){
-        $destenation='public/imgs/posts/'.$post->path;
+        $destenation='public/imgs/'.$post->path;
         if (file_exists($destenation)){
        File::delete($destenation);
        }
-       $path=$this->uploadImage($request,'posts');
+        $user=User::find(auth()->user()->id);
+       $path=$this->uploadImage($request,'posts',$user->user_name);
        $post->path= $path;
        }
        $post->save();
         return response()->json('Updated Done');
     }
     public function delete_post($id){
+        $user=User::find(auth()->user()->id);
+    if(file_exists('public/imgs/posts/'.$user->user_name)){
+        File::delete('public/imgs/posts/'.$user->user_name);
+    }
     Post::destroy($id);
     return response()->json('Deleted Done');
     }
