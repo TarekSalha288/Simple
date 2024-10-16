@@ -74,10 +74,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     {
         return $this->hasMany(Post::class);
     }
-    public function followers(): BelongsToMany{
+    public function followings(): BelongsToMany{
         return $this->belongsToMany(User::class,'user_folowers','user_id','follower_id');
     }
-    public function followings(): BelongsToMany{
+    public function followers(): BelongsToMany{
         return $this->belongsToMany(User::class,'user_folowers','follower_id','user_id');
     }
     public function fposts():BelongsToMany{

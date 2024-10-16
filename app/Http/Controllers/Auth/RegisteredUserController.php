@@ -43,7 +43,7 @@ class RegisteredUserController extends Controller
         $user->name = request()->name;
         $user->email = request()->email;
         $user->password = bcrypt(request()->password);
-        $user->user_name = 'taregv';
+        $user->user_name = request()->user_name;
         $path=$this->uploadImage( request(),'users',$user->user_name);
         $user->image_path = $path;
         $user->save();

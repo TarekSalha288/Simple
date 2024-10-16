@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\UploadImageTrait;
 use Illuminate\Support\Facades\Validator;
-
+use  Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -19,10 +19,10 @@ class AuthController extends Controller
     public function register() {
         $validator = Validator::make(request()->all(), [
             'name' => 'required',
-            'user_name'=>'unique:users,id',
+            'user_name'=>'required|unique:users,id',
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed|min:8',
-            'image_path' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'image_path' => 'image|mimes:jpeg,png,jpg',
         ]);
 
         if($validator->fails()){
@@ -64,7 +64,11 @@ class AuthController extends Controller
      */
     public function me()
     {
-        return response()->json(auth()->user());
+        $followers=User::find(Auth::user()->id)->followers;
+        $followings=User::find(Auth::user()->id)->followings;
+        return response()->json(['user_info'=>Auth::user(),
+    'followers'=>$followers,
+'followings'=>$followings]);
     }
 
     /**
