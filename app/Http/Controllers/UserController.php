@@ -14,6 +14,13 @@ class UserController extends Controller
 {
     use UploadImageTrait;
     public function follow($id){
+        $flag=DB::table('user_folowers')->where('user_id',Auth::user()->id)->where('follower_id',$id)->first();
+        if($flag){
+            return response()->json('You Can\'t Follow This User Again' );
+        }
+        if(Auth::user()->id==$id){
+            return response()->json('You Can\'t Follow Your Self' );
+        }
         DB::table('user_folowers')->insert([
             'user_id'=> Auth::user()->id,
             'follower_id'=>$id,
@@ -32,28 +39,53 @@ class UserController extends Controller
     }
     public function myPosts(){
        $posts=User::find(Auth::user()->id)->posts;
-       return response()->json(['My Posts'=>$posts]);
+       $allposts=[];
+       foreach($posts as $post){
+        $likedByUser = $post->likes->contains('user_id', Auth::user()->id);
+         $allposts[]=[
+               'post'=>$post,
+               'likes'=>$post->likes()->count(),
+               'comments'=>$post->comments()->count(),
+               'favourites'=>$post->fusers()->count(),
+               'like'=>$likedByUser,
+         ];
+       }
+
+       return response()->json($allposts);
     }
     public function edit($id){
         $user=User::where('id',$id)->first();
         $flag='follow';
         $following=DB::table('user_folowers')->where('user_id',Auth::user()->id)->where('follower_id',$id)->first();
         $follower=DB::table('user_folowers')->where('follower_id',Auth::user()->id)->where('user_id',$id)->first();
-         if($following){
-            $flag='following';
-         }
-         if($follower){
+        if($follower){
             $flag= 'followback';
          }
-
-        return response()->json(['user_info'=>$user,'follow_status'=>$flag]);
-        //return $flag;
+        if($following){
+            $flag='following';
+         }
+               $num_follower=$user->followers()->count();
+               $num_following=$user->followings()->count();
+               $user->toArray;
+               $user['follow_status']=$flag;
+               $user['followings']=$num_following;
+               $user['follower']=$num_follower;
+        return response()->json(['user_info'=>$user]);
     }
+public function search(Request $request)
+{
+    $query = $request->input('name');
+    $users = User::where('name', 'LIKE', "%{$query}%")
+                 ->orWhere('user_name', 'LIKE', "%{$query}%")
+                 ->get();
+
+    return response()->json($users);
+}
+
 public function userPosts($id){
             $posts = User::find($id)->posts;
             $allposts = [];
             $user = Auth::user();
-
             foreach ($posts as $post) {
                 $post->user;
                 $postData = $post->toArray();
@@ -62,7 +94,6 @@ public function userPosts($id){
                 $num_likes = $post->likes()->count();
                 $num_comments = $post->comments()->count();
                 $likedByUser = $post->likes->contains('user_id', $user->id);
-
                 $allposts[] = [
                     'post' => $postData,
                     'Likes' => $num_likes,
@@ -125,12 +156,20 @@ public function userPosts($id){
         File::delete('public/imgs/posts/'.$user->user_name);}
         User::destroy(Auth::user()->id);
     }
-    public function suggestedUsers(){
-        $follwers[]=User::find(Auth::user()->id)->followers;
-
-        $users[]=User::find(Auth::user()->id)->followers->pluck('followers');
-        return response()->json(['followers'=>$follwers,'followersOfFollowers'=>$users]);
+    public function suggestedUsers() {
+        $user = Auth::user();
+        $followings = $user->followings()->pluck('follower_id')->toArray();
+        $suggested = [];
+        foreach ($followings as $followingId) {
+            $followingsOfFollowing = User::find($followingId)->followings()->pluck('follower_id')->toArray();
+            $suggested = array_merge($suggested, $followingsOfFollowing);
+        }
+        $suggested = array_unique($suggested);
+        $suggested = array_diff($suggested, $followings, [$user->id]);
+        $suggestedUsers = User::whereIn('id', $suggested)->get();
+        return response()->json(['suggested_users' => $suggestedUsers]);
     }
+
     ///////////Admin Functions/////////////////
     public function deleteUser($id){
     User::destroy($id);
