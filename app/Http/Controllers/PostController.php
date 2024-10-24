@@ -11,7 +11,8 @@ use App\UploadImageTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 class PostController extends Controller
 {
     use UploadImageTrait;
@@ -83,12 +84,12 @@ class PostController extends Controller
         foreach ($followings as $following) {
             foreach ($following->posts as $post) {
                 $post->user;
-                $postData = $post->toArray();
-                unset($postData['likes']);
                 $num_likes = $post->Likes()->count();
                 $num_comments = $post->comments()->count();
                 $num_fusers = $post->fusers()->count();
                 $likedByUser = $post->Likes->contains('user_id', $user->id);
+                $post = $post->toArray();
+                unset($post['likes']);
                 $allPosts[] = [
                     'post' => $post,
                     'liked_by_user' => $likedByUser,
@@ -98,7 +99,13 @@ class PostController extends Controller
                 ];
             }
         }
-        return response()->json(['posts' => $allPosts]);
+ $currentPage = LengthAwarePaginator::resolveCurrentPage();
+ $perPage = 2;
+ $allPosts=collect($allPosts);
+ $currentPageItems = $allPosts->forPage($currentPage, $perPage);
+ $paginatedPosts = new LengthAwarePaginator($currentPageItems, $allPosts->count(), $perPage, $currentPage,[
+     'path' => request()->url()]);
+        return response()->json( $paginatedPosts);
     }
     public function post($id)
     {
@@ -125,8 +132,11 @@ class PostController extends Controller
     }
     public function addComment(Request $request, $id)
     {
-        Comment::create(['post_id' => $id, 'user_id' => Auth::user()->id, 'body' => $request->body, 'created_at' => now(), 'updated_at' => now()]);
+        $comment=Comment::create(['post_id' => $id, 'user_id' => Auth::user()->id, 'body' => $request->body, 'created_at' => now(), 'updated_at' => now()]);
+   $comment->user;
+        return response()->json($comment);
     }
+
     public function addLike($id)
     {
         $like = Like::where('user_id', Auth::user()->id)->where('post_id', $id)->first();
@@ -140,10 +150,36 @@ class PostController extends Controller
     public function showComments($id)
     {
         $comments = Post::find($id)->comments;
+        $allComments=[];
+        if($comments){
         foreach ($comments as $comment) {
-            $users[] = User::where('id', $comment->user_id)->get();
+            $likedByUser = $comment->Likes->contains('user_id', Auth::user()->id);
+            $tool=false;
+            if($comment->user==Auth::user()){
+             $tool=true;
+            }
+            $comment->user;
+            $comment->replays;
+            $num_of_likes=$comment->likes()->count();
+            $num_of_replays=$comment->replays()->count();
+            $comment->toArray;
+            $allComments[]=[
+                          'comment'=>$comment,
+                          'Likes'=>$num_of_likes,
+                          'num_Replays'=>$num_of_replays,
+                          'isLike'=>$likedByUser,
+                          'tool'=>$tool
+            ];
         }
-        return response()->json(['comments' => $comments, 'users' => $users]);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 5;
+        $allComments=collect($allComments);
+        $currentPageItems = $allComments->forPage($currentPage, $perPage);
+        $paginatedComments = new LengthAwarePaginator($currentPageItems, $allComments->count(), $perPage, $currentPage,[
+            'path' => request()->url()]);
+        return response()->json($paginatedComments);}
+
+        return response()->json('No comment for this post');
     }
     public function showLikes($id)
     {

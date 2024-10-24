@@ -53,6 +53,7 @@ Route::post('/showfollowers',[UserController::class,'showFollowers']);
 Route::post('/showfollowings',[UserController::class,'showFollowings']);
 Route::post('myposts',[UserController::class,'myPosts']);
 Route::post('/user/{id}',[UserController::class,'edit']);
+Route::post('/tools/{id}',[UserController::class,'showTools']);
 Route::post('/search',[UserController::class,'search']);
 Route::post('/userposts/{id}',[UserController::class,'userPosts']);
 Route::delete('deleteaccount',[UserController::class,'deleteAccount']);

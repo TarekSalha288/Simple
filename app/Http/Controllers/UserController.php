@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Post;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 use  Illuminate\Support\Facades\Auth;
 class UserController extends Controller
@@ -50,7 +51,13 @@ class UserController extends Controller
                'like'=>$likedByUser,
          ];
        }
-
+       $currentPage = LengthAwarePaginator::resolveCurrentPage();
+ $perPage = 2;
+ $allposts=collect($allposts);
+ $currentPageItems = $allposts->forPage($currentPage, $perPage);
+ $paginatedPosts = new LengthAwarePaginator($currentPageItems, $allposts->count(), $perPage, $currentPage,[
+     'path' => request()->url()]);
+//need to return $pagenatedPosts
        return response()->json($allposts);
     }
     public function edit($id){
@@ -78,6 +85,7 @@ public function search(Request $request)
     $users = User::where('name', 'LIKE', "%{$query}%")
                  ->orWhere('user_name', 'LIKE', "%{$query}%")
                  ->get();
+
 
     return response()->json($users);
 }
@@ -169,7 +177,12 @@ public function userPosts($id){
         $suggestedUsers = User::whereIn('id', $suggested)->get();
         return response()->json(['suggested_users' => $suggestedUsers]);
     }
-
+    public function showTools($id){
+        if(Auth::user()==Post::where('id',$id)->user){
+         return true;
+        }
+        return false;
+    }
     ///////////Admin Functions/////////////////
     public function deleteUser($id){
     User::destroy($id);

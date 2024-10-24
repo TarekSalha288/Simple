@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Comment;
 use App\Models\LikeComment;
 use App\Models\ReplayComment;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 class CommentController extends Controller
 
@@ -38,14 +39,14 @@ public function delete($id){
 public function replay(Request $request, $id){
     ReplayComment::create([
         'body'=> $request->body,
-        'user_id'=>auth()->user()->id,
+        'user_id'=>Auth::user()->id,
         'comment_id'=>$id,
     ]);
     return response()->json(['message'=> 'Updated Replay Comment']);
 }
 public function like($id){
 LikeComment::create([
-    'user_id'=>auth()->user()->id,
+    'user_id'=>Auth::user()->id,
     'comment_id'=>$id,
     'active'=>1,
 ]);
